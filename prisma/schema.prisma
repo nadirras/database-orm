@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProductCategory {
+  MAKANAN
+  MINUMAN
+  PAKAIAN
+}
+
+enum StatusTransaction {
+  PENDING
+  PAID
+  CANCEL
+}
+
+model User {
+  id          Int           @id @default(autoincrement())
+  userName    String        @unique
+  email       String        @unique
+  password    String
+  cart        Cart?
+  transaction Transaction[]
+}
+
+model Product {
+  id              Int               @id @default(autoincrement())
+  productName     String
+  productDesc     String? //boleh null
+  productCategory ProductCategory
+  productPrice    Int
+  productStock    Int
+  CartItem        CartItem[]
+  TransactionItem TransactionItem[]
+}
+
+//one to one sama user
+model Cart {
+  id       Int        @id @default(autoincrement())
+  userId   Int        @unique
+  user     User       @relation(fields: [userId], references: [id])
+  cartItem CartItem[] //many to many
+}
+
+//jembatan cart sama product
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  productId Int
+  quantity  Int
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Transaction {
+  id              Int               @id @default(autoincrement())
+  userId          Int
+  status          StatusTransaction
+  total           Int
+  discount        Int
+  grandTotal      Int
+  user            User              @relation(fields: [userId], references: [id])
+  TransactionItem TransactionItem[]
+}
+
+//jembatan transaction sama product soalnya many to many
+model TransactionItem {
+  id            Int         @id @default(autoincrement())
+  transactionId Int
+  productId     Int
+  quantity      Int
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  product       Product     @relation(fields: [productId], references: [id])
+}
